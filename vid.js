@@ -1,16 +1,16 @@
 /* =========================================================
    ADSTRK SPONSORED POST ROUTER
-   Version 3.31
+   Version 3.32
 
    FEATURES
-   - Initial 10-second delay
+   - Initial 30-second delay
    - Sponsored Post popup only
    - No close/cancel button
    - Weighted advertiser rotation
    - Random advertiser selection
    - User-click initiated advertiser opening
    - Popup closes immediately on Continue
-   - 15-second delay before next Sponsored Post
+   - 60-second delay before next Sponsored Post
    - Repeats while page remains open
    - Duplicate-load protection
    - Mobile responsive
@@ -40,15 +40,15 @@
 
         /*
          * Time before the first Sponsored Post.
-         * 10 seconds.
+         * 30 seconds.
          */
-        initialDelay: 10000,
+        initialDelay: 30000,
 
         /*
          * Time between Sponsored Posts.
-         * 15 seconds after Continue is tapped.
+         * 60 seconds after Continue is tapped.
          */
-        repeatDelay: 15000,
+        repeatDelay: 60000,
 
         /*
          * Advertisers.
@@ -60,22 +60,22 @@
         links: [
 
             {
-                url: "https://oopsie.bio/chelsiaalovess",
+                url: "https://advertiser1.com",
                 weight: 40
             },
 
             {
-                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd",
+                url: "https://advertiser2.com",
                 weight: 25
             },
 
             {
-                url: "https://t.me/adstrkofficial",
+                url: "https://advertiser3.com",
                 weight: 15
             },
 
             {
-                url: "https://t.me/adstrkbot",
+                url: "https://advertiser4.com",
                 weight: 10
             },
 
@@ -94,11 +94,8 @@
        ===================================================== */
 
     let popupVisible = false;
-
     let nextPopupTimer = null;
-
     let initialTimer = null;
-
     let systemStarted = false;
 
 
@@ -159,7 +156,6 @@
             );
 
             return null;
-
         }
 
 
@@ -217,7 +213,6 @@
             overlay.remove();
 
         }
-
 
         popupVisible = false;
 
@@ -858,7 +853,9 @@
         popupVisible = true;
 
 
-        /* Make sure CSS exists. */
+        /*
+         * Make sure CSS exists.
+         */
 
         createStyle();
 
@@ -1031,7 +1028,7 @@
 
                 /*
                  * =================================================
-                 * START 15-SECOND COUNTDOWN
+                 * START 60-SECOND COUNTDOWN
                  * =================================================
                  */
 
@@ -1068,7 +1065,7 @@
 
 
         /*
-         * 15-second countdown.
+         * 60-second countdown.
          */
 
         nextPopupTimer =
@@ -1109,11 +1106,12 @@
             return;
         }
 
+
         systemStarted = true;
 
 
         /*
-         * First popup after 10 seconds.
+         * First popup after 30 seconds.
          */
 
         initialTimer =
