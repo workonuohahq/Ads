@@ -1,6 +1,6 @@
 /* =========================================================
    ADSTRK SPONSORED POST ROUTER
-   Version 3.2
+   Version 3.3
 
    FEATURES
    - Initial 10-second delay
@@ -8,10 +8,10 @@
    - No close/cancel button
    - Weighted advertiser rotation
    - Random advertiser selection
-   - Opens advertiser in a new tab after user click
-   - Popup disappears immediately after successful open
+   - User-click initiated advertiser opening
+   - Popup closes immediately on Continue
    - 15-second delay before next Sponsored Post
-   - Returning to Adstrk tab never restores old popup
+   - Repeats while page remains open
    - Duplicate-load protection
    - Mobile responsive
    - No external libraries
@@ -20,8 +20,9 @@
 (function () {
     "use strict";
 
+
     /* =====================================================
-       PREVENT DUPLICATE SCRIPT LOADS
+       DUPLICATE LOAD PROTECTION
        ===================================================== */
 
     if (window.__ADSTRK_SPONSORED_POST_LOADED__) {
@@ -37,10 +38,25 @@
 
     const ADSTRK = {
 
+        /*
+         * Time before the first Sponsored Post.
+         * 10 seconds.
+         */
         initialDelay: 10000,
 
+        /*
+         * Time between Sponsored Posts.
+         * 15 seconds after Continue is tapped.
+         */
         repeatDelay: 15000,
 
+        /*
+         * Advertisers.
+         *
+         * Higher weight = higher probability.
+         *
+         * 40 + 25 + 15 + 10 + 10 = 100
+         */
         links: [
 
             {
@@ -79,11 +95,33 @@
 
     let popupVisible = false;
 
-    let nextTimer = null;
+    let nextPopupTimer = null;
 
     let initialTimer = null;
 
-    let advertiserOpened = false;
+    let systemStarted = false;
+
+
+    /* =====================================================
+       UTILITY
+       ===================================================== */
+
+    function getOverlay() {
+
+        return document.getElementById(
+            "adstrk-sponsored-overlay"
+        );
+
+    }
+
+
+    function getStyle() {
+
+        return document.getElementById(
+            "adstrk-sponsored-style"
+        );
+
+    }
 
 
     /* =====================================================
@@ -107,7 +145,7 @@
 
 
     /* =====================================================
-       WEIGHTED RANDOM ADVERTISER SELECTION
+       WEIGHTED RANDOM ADVERTISER
        ===================================================== */
 
     function selectAdvertiser() {
@@ -121,7 +159,9 @@
             );
 
             return null;
+
         }
+
 
         const totalWeight = links.reduce(
             function (total, ad) {
@@ -132,8 +172,10 @@
             0
         );
 
+
         let random =
             Math.random() * totalWeight;
+
 
         for (
             let i = 0;
@@ -145,6 +187,7 @@
                 links[i].weight
             );
 
+
             if (random <= 0) {
 
                 return links[i];
@@ -152,6 +195,7 @@
             }
 
         }
+
 
         return links[
             links.length - 1
@@ -161,15 +205,12 @@
 
 
     /* =====================================================
-       REMOVE POPUP
+       REMOVE SPONSORED POST
        ===================================================== */
 
     function removeSponsoredPost() {
 
-        const overlay =
-            document.getElementById(
-                "adstrk-sponsored-overlay"
-            );
+        const overlay = getOverlay();
 
         if (overlay) {
 
@@ -177,16 +218,6 @@
 
         }
 
-        const style =
-            document.getElementById(
-                "adstrk-sponsored-style"
-            );
-
-        if (style) {
-
-            style.remove();
-
-        }
 
         popupVisible = false;
 
@@ -194,100 +225,33 @@
 
 
     /* =====================================================
-       CREATE SPONSORED POST
+       CREATE STYLE
        ===================================================== */
 
-    function createSponsoredPost() {
+    function createStyle() {
 
-        /* Prevent duplicate popup */
+        /*
+         * Don't inject the stylesheet more than once.
+         */
 
-        if (popupVisible) {
+        if (getStyle()) {
             return;
         }
 
-
-        /* Prevent popup if one already exists */
-
-        if (
-            document.getElementById(
-                "adstrk-sponsored-overlay"
-            )
-        ) {
-
-            return;
-
-        }
-
-
-        popupVisible = true;
-
-        advertiserOpened = false;
-
-
-        /* =================================================
-           OVERLAY
-           ================================================= */
-
-        const overlay =
-            document.createElement("div");
-
-        overlay.id =
-            "adstrk-sponsored-overlay";
-
-
-        /* =================================================
-           HTML
-           ================================================= */
-
-        overlay.innerHTML = `
-
-            <div class="adstrk-modal">
-
-                <div class="adstrk-glow"></div>
-
-                <div class="adstrk-pulse"></div>
-
-                <div class="adstrk-icon">
-                    &#8599;
-                </div>
-
-                <div class="adstrk-title">
-                    Sponsored Post
-                </div>
-
-                <div class="adstrk-description">
-                    A sponsored page is ready.
-                    Tap below to continue.
-                </div>
-
-                <button
-                    type="button"
-                    id="adstrk-sponsored-button"
-                >
-                    Continue
-                    <span>&rarr;</span>
-                </button>
-
-                <div class="adstrk-secure">
-                    Sponsored | Adstrk
-                </div>
-
-            </div>
-
-        `;
-
-
-        /* =================================================
-           CSS
-           ================================================= */
 
         const style =
             document.createElement("style");
 
+
         style.id =
             "adstrk-sponsored-style";
 
+
         style.textContent = `
+
+            /* =============================================
+               FULL SCREEN OVERLAY
+               ============================================= */
 
             #adstrk-sponsored-overlay {
 
@@ -328,6 +292,10 @@
 
             }
 
+
+            /* =============================================
+               MODAL
+               ============================================= */
 
             .adstrk-modal {
 
@@ -390,6 +358,10 @@
             }
 
 
+            /* =============================================
+               DECORATIVE GLOW
+               ============================================= */
+
             .adstrk-glow {
 
                 position: absolute;
@@ -429,6 +401,10 @@
             }
 
 
+            /* =============================================
+               PULSE
+               ============================================= */
+
             .adstrk-pulse {
 
                 position: absolute;
@@ -462,6 +438,10 @@
 
             }
 
+
+            /* =============================================
+               ICON
+               ============================================= */
 
             .adstrk-icon {
 
@@ -515,6 +495,10 @@
             }
 
 
+            /* =============================================
+               TITLE
+               ============================================= */
+
             .adstrk-title {
 
                 position: relative;
@@ -531,6 +515,10 @@
 
             }
 
+
+            /* =============================================
+               DESCRIPTION
+               ============================================= */
 
             .adstrk-description {
 
@@ -554,6 +542,10 @@
 
             }
 
+
+            /* =============================================
+               CONTINUE BUTTON
+               ============================================= */
 
             #adstrk-sponsored-button {
 
@@ -602,6 +594,9 @@
                 transition:
                     transform .15s ease,
                     box-shadow .15s ease;
+
+                -webkit-tap-highlight-color:
+                    transparent;
 
             }
 
@@ -653,6 +648,10 @@
             }
 
 
+            /* =============================================
+               FOOTER
+               ============================================= */
+
             .adstrk-secure {
 
                 position: relative;
@@ -673,6 +672,10 @@
 
             }
 
+
+            /* =============================================
+               ANIMATIONS
+               ============================================= */
 
             @keyframes adstrkFadeIn {
 
@@ -782,6 +785,10 @@
             }
 
 
+            /* =============================================
+               MOBILE
+               ============================================= */
+
             @media (max-width: 480px) {
 
                 #adstrk-sponsored-overlay {
@@ -823,13 +830,96 @@
         `;
 
 
-        /* =================================================
-           INSERT STYLE + OVERLAY
-           ================================================= */
-
         document.head.appendChild(style);
 
-        document.body.appendChild(overlay);
+    }
+
+
+    /* =====================================================
+       CREATE SPONSORED POST
+       ===================================================== */
+
+    function createSponsoredPost() {
+
+        /*
+         * Never create two popups.
+         */
+
+        if (popupVisible) {
+            return;
+        }
+
+
+        if (getOverlay()) {
+            return;
+        }
+
+
+        popupVisible = true;
+
+
+        /* Make sure CSS exists. */
+
+        createStyle();
+
+
+        /* =================================================
+           OVERLAY
+           ================================================= */
+
+        const overlay =
+            document.createElement("div");
+
+
+        overlay.id =
+            "adstrk-sponsored-overlay";
+
+
+        /* =================================================
+           POPUP CONTENT
+           ================================================= */
+
+        overlay.innerHTML = `
+
+            <div class="adstrk-modal">
+
+                <div class="adstrk-glow"></div>
+
+                <div class="adstrk-pulse"></div>
+
+                <div class="adstrk-icon">
+                    &#8599;
+                </div>
+
+                <div class="adstrk-title">
+                    Sponsored Post
+                </div>
+
+                <div class="adstrk-description">
+                    A sponsored page is ready.
+                    Tap below to continue.
+                </div>
+
+                <button
+                    type="button"
+                    id="adstrk-sponsored-button"
+                >
+                    Continue
+                    <span>&rarr;</span>
+                </button>
+
+                <div class="adstrk-secure">
+                    Sponsored | Adstrk
+                </div>
+
+            </div>
+
+        `;
+
+
+        document.body.appendChild(
+            overlay
+        );
 
 
         /* =================================================
@@ -842,21 +932,50 @@
             );
 
 
+        if (!button) {
+
+            removeSponsoredPost();
+
+            return;
+
+        }
+
+
+        /* =================================================
+           CONTINUE CLICK
+           ================================================= */
+
         button.addEventListener(
             "click",
             function () {
 
-                if (advertiserOpened) {
+                /*
+                 * Prevent double taps.
+                 */
+
+                if (!popupVisible) {
                     return;
                 }
 
+
+                /*
+                 * Select advertiser BEFORE removing
+                 * the popup so we know where to send
+                 * the user.
+                 */
 
                 const advertiser =
                     selectAdvertiser();
 
 
                 if (!advertiser) {
+
+                    console.warn(
+                        "Adstrk: No advertiser available."
+                    );
+
                     return;
+
                 }
 
 
@@ -866,71 +985,61 @@
                 );
 
 
-                let newTab = null;
-
-
-                /* =========================================
-                   OPEN ADVERTISER
-                   ========================================= */
-
-                try {
-
-                    newTab =
-                        window.open(
-                            advertiser.url,
-                            "_blank",
-                            "noopener,noreferrer"
-                        );
-
-                }
-
-                catch (error) {
-
-                    console.warn(
-                        "Adstrk: Could not open advertiser.",
-                        error
-                    );
-
-                }
-
-
-                /* =========================================
-                   CHECK WHETHER BROWSER BLOCKED IT
-                   ========================================= */
-
-                if (!newTab) {
-
-                    console.warn(
-                        "Adstrk: New tab was blocked."
-                    );
-
-                    return;
-
-                }
-
-
-                /* =========================================
-                   SUCCESS
-                   ========================================= */
-
-                advertiserOpened = true;
-
-
                 /*
-                 * IMPORTANT:
+                 * =================================================
+                 * CRITICAL STEP
                  *
-                 * Remove popup immediately.
+                 * REMOVE POPUP FIRST.
+                 *
+                 * We do NOT wait for window.open().
+                 * We do NOT check a window reference.
+                 * We do NOT wait for the new tab.
+                 * =================================================
                  */
 
                 removeSponsoredPost();
 
 
                 /*
-                 * Start 15-second countdown.
+                 * =================================================
+                 * OPEN ADVERTISER
+                 *
+                 * This still happens inside the original
+                 * user click event.
+                 * =================================================
+                 */
+
+                try {
+
+                    window.open(
+                        advertiser.url,
+                        "_blank",
+                        "noopener,noreferrer"
+                    );
+
+                }
+
+                catch (error) {
+
+                    console.warn(
+                        "Adstrk: Advertiser could not be opened.",
+                        error
+                    );
+
+                }
+
+
+                /*
+                 * =================================================
+                 * START 15-SECOND COUNTDOWN
+                 * =================================================
                  */
 
                 scheduleNextPopup();
 
+            },
+            {
+                once: true
             }
         );
 
@@ -938,30 +1047,48 @@
 
 
     /* =====================================================
-       SCHEDULE NEXT SPONSORED POST
+       SCHEDULE NEXT POPUP
        ===================================================== */
 
     function scheduleNextPopup() {
 
-        if (nextTimer) {
+        /*
+         * Remove an existing timer first.
+         */
 
-            clearTimeout(nextTimer);
+        if (nextPopupTimer !== null) {
+
+            clearTimeout(
+                nextPopupTimer
+            );
+
+            nextPopupTimer = null;
 
         }
 
 
-        nextTimer =
+        /*
+         * 15-second countdown.
+         */
+
+        nextPopupTimer =
             window.setTimeout(
                 function () {
 
-                    nextTimer = null;
+                    nextPopupTimer = null;
+
 
                     /*
                      * Make absolutely sure
-                     * an old popup isn't present.
+                     * no old popup exists.
                      */
 
                     removeSponsoredPost();
+
+
+                    /*
+                     * Show fresh Sponsored Post.
+                     */
 
                     createSponsoredPost();
 
@@ -973,55 +1100,21 @@
 
 
     /* =====================================================
-       PAGE VISIBILITY PROTECTION
-       ===================================================== */
-
-    document.addEventListener(
-        "visibilitychange",
-        function () {
-
-            /*
-             * If the user returns to the Adstrk tab,
-             * never allow an old Sponsored Post
-             * to remain visible.
-             */
-
-            if (
-                document.visibilityState === "visible" &&
-                advertiserOpened
-            ) {
-
-                removeSponsoredPost();
-
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       PAGE SHOW PROTECTION
-       ===================================================== */
-
-    window.addEventListener(
-        "pageshow",
-        function () {
-
-            if (advertiserOpened) {
-
-                removeSponsoredPost();
-
-            }
-
-        }
-    );
-
-
-    /* =====================================================
        START SYSTEM
        ===================================================== */
 
     function start() {
+
+        if (systemStarted) {
+            return;
+        }
+
+        systemStarted = true;
+
+
+        /*
+         * First popup after 10 seconds.
+         */
 
         initialTimer =
             window.setTimeout(
@@ -1036,6 +1129,39 @@
             );
 
     }
+
+
+    /* =====================================================
+       CLEANUP WHEN PAGE IS UNLOADED
+       ===================================================== */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+
+            if (initialTimer !== null) {
+
+                clearTimeout(
+                    initialTimer
+                );
+
+                initialTimer = null;
+
+            }
+
+
+            if (nextPopupTimer !== null) {
+
+                clearTimeout(
+                    nextPopupTimer
+                );
+
+                nextPopupTimer = null;
+
+            }
+
+        }
+    );
 
 
     /* =====================================================
