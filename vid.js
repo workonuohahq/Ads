@@ -60,22 +60,22 @@
         links: [
 
             {
-                url: "https://advertiser1.com",
+                url: "https://oopsie.bio/chelsiaalovess",
                 weight: 40
             },
 
             {
-                url: "https://advertiser2.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd",
                 weight: 25
             },
 
             {
-                url: "https://advertiser3.com",
+                url: "https://t.me/adstrkofficial",
                 weight: 15
             },
 
             {
-                url: "https://advertiser4.com",
+                url: "https://t.me/adstrkbot",
                 weight: 10
             },
 
