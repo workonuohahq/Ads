@@ -1,6 +1,6 @@
 /* =========================================================
    ADSTRK SPONSORED POST ROUTER
-   Version 3.1
+   Version 3.2
 
    FEATURES
    - Initial 10-second delay
@@ -9,9 +9,9 @@
    - Weighted advertiser rotation
    - Random advertiser selection
    - Opens advertiser in a new tab after user click
-   - Popup disappears after successful open
+   - Popup disappears immediately after successful open
    - 15-second delay before next Sponsored Post
-   - Repeats while page remains open
+   - Returning to Adstrk tab never restores old popup
    - Duplicate-load protection
    - Mobile responsive
    - No external libraries
@@ -37,31 +37,9 @@
 
     const ADSTRK = {
 
-        /*
-         * Time before the first Sponsored Post appears.
-         * 10 seconds = 10000ms
-         */
         initialDelay: 10000,
 
-        /*
-         * Time after a successful advertiser click
-         * before the next Sponsored Post appears.
-         * 15 seconds = 15000ms
-         */
         repeatDelay: 15000,
-
-        /*
-         * Advertisers
-         *
-         * Higher weight = higher probability.
-         *
-         * Example:
-         * Advertiser 1 = 40%
-         * Advertiser 2 = 25%
-         * Advertiser 3 = 15%
-         * Advertiser 4 = 10%
-         * Advertiser 5 = 10%
-         */
 
         links: [
 
@@ -100,7 +78,12 @@
        ===================================================== */
 
     let popupVisible = false;
+
     let nextTimer = null;
+
+    let initialTimer = null;
+
+    let advertiserOpened = false;
 
 
     /* =====================================================
@@ -140,7 +123,6 @@
             return null;
         }
 
-
         const totalWeight = links.reduce(
             function (total, ad) {
 
@@ -150,10 +132,8 @@
             0
         );
 
-
         let random =
             Math.random() * totalWeight;
-
 
         for (
             let i = 0;
@@ -165,7 +145,6 @@
                 links[i].weight
             );
 
-
             if (random <= 0) {
 
                 return links[i];
@@ -174,10 +153,42 @@
 
         }
 
-
         return links[
             links.length - 1
         ];
+
+    }
+
+
+    /* =====================================================
+       REMOVE POPUP
+       ===================================================== */
+
+    function removeSponsoredPost() {
+
+        const overlay =
+            document.getElementById(
+                "adstrk-sponsored-overlay"
+            );
+
+        if (overlay) {
+
+            overlay.remove();
+
+        }
+
+        const style =
+            document.getElementById(
+                "adstrk-sponsored-style"
+            );
+
+        if (style) {
+
+            style.remove();
+
+        }
+
+        popupVisible = false;
 
     }
 
@@ -188,30 +199,29 @@
 
     function createSponsoredPost() {
 
-        /*
-         * Prevent duplicate overlays.
-         */
+        /* Prevent duplicate popup */
 
         if (popupVisible) {
             return;
         }
 
 
-        /*
-         * Prevent another Adstrk overlay
-         * if one somehow already exists.
-         */
+        /* Prevent popup if one already exists */
 
         if (
             document.getElementById(
                 "adstrk-sponsored-overlay"
             )
         ) {
+
             return;
+
         }
 
 
         popupVisible = true;
+
+        advertiserOpened = false;
 
 
         /* =================================================
@@ -220,7 +230,6 @@
 
         const overlay =
             document.createElement("div");
-
 
         overlay.id =
             "adstrk-sponsored-overlay";
@@ -238,22 +247,18 @@
 
                 <div class="adstrk-pulse"></div>
 
-
                 <div class="adstrk-icon">
                     &#8599;
                 </div>
-
 
                 <div class="adstrk-title">
                     Sponsored Post
                 </div>
 
-
                 <div class="adstrk-description">
                     A sponsored page is ready.
                     Tap below to continue.
                 </div>
-
 
                 <button
                     type="button"
@@ -262,7 +267,6 @@
                     Continue
                     <span>&rarr;</span>
                 </button>
-
 
                 <div class="adstrk-secure">
                     Sponsored | Adstrk
@@ -280,16 +284,10 @@
         const style =
             document.createElement("style");
 
-
         style.id =
             "adstrk-sponsored-style";
 
-
         style.textContent = `
-
-            /* =============================================
-               FULL SCREEN OVERLAY
-               ============================================= */
 
             #adstrk-sponsored-overlay {
 
@@ -330,10 +328,6 @@
 
             }
 
-
-            /* =============================================
-               MODAL
-               ============================================= */
 
             .adstrk-modal {
 
@@ -396,10 +390,6 @@
             }
 
 
-            /* =============================================
-               DECORATIVE GLOW
-               ============================================= */
-
             .adstrk-glow {
 
                 position: absolute;
@@ -439,10 +429,6 @@
             }
 
 
-            /* =============================================
-               PULSE
-               ============================================= */
-
             .adstrk-pulse {
 
                 position: absolute;
@@ -476,10 +462,6 @@
 
             }
 
-
-            /* =============================================
-               ICON
-               ============================================= */
 
             .adstrk-icon {
 
@@ -533,10 +515,6 @@
             }
 
 
-            /* =============================================
-               TITLE
-               ============================================= */
-
             .adstrk-title {
 
                 position: relative;
@@ -553,10 +531,6 @@
 
             }
 
-
-            /* =============================================
-               DESCRIPTION
-               ============================================= */
 
             .adstrk-description {
 
@@ -580,10 +554,6 @@
 
             }
 
-
-            /* =============================================
-               BUTTON
-               ============================================= */
 
             #adstrk-sponsored-button {
 
@@ -683,10 +653,6 @@
             }
 
 
-            /* =============================================
-               FOOTER
-               ============================================= */
-
             .adstrk-secure {
 
                 position: relative;
@@ -707,10 +673,6 @@
 
             }
 
-
-            /* =============================================
-               ANIMATIONS
-               ============================================= */
 
             @keyframes adstrkFadeIn {
 
@@ -820,10 +782,6 @@
             }
 
 
-            /* =============================================
-               MOBILE
-               ============================================= */
-
             @media (max-width: 480px) {
 
                 #adstrk-sponsored-overlay {
@@ -888,19 +846,17 @@
             "click",
             function () {
 
-                /*
-                 * Select a fresh weighted advertiser
-                 * every time the user clicks.
-                 */
+                if (advertiserOpened) {
+                    return;
+                }
+
 
                 const advertiser =
                     selectAdvertiser();
 
 
                 if (!advertiser) {
-
                     return;
-
                 }
 
 
@@ -913,12 +869,9 @@
                 let newTab = null;
 
 
-                /*
-                 * Open advertiser in a new tab.
-                 *
-                 * This happens directly inside the
-                 * user's click event.
-                 */
+                /* =========================================
+                   OPEN ADVERTISER
+                   ========================================= */
 
                 try {
 
@@ -930,6 +883,7 @@
                         );
 
                 }
+
                 catch (error) {
 
                     console.warn(
@@ -940,12 +894,9 @@
                 }
 
 
-                /*
-                 * Browser blocked the new tab.
-                 *
-                 * Keep the Sponsored Post visible
-                 * so the user can try again.
-                 */
+                /* =========================================
+                   CHECK WHETHER BROWSER BLOCKED IT
+                   ========================================= */
 
                 if (!newTab) {
 
@@ -958,31 +909,24 @@
                 }
 
 
+                /* =========================================
+                   SUCCESS
+                   ========================================= */
+
+                advertiserOpened = true;
+
+
                 /*
-                 * SUCCESSFUL OPEN.
+                 * IMPORTANT:
                  *
-                 * Remove current Sponsored Post.
+                 * Remove popup immediately.
                  */
 
-                overlay.remove();
-
-                popupVisible = false;
+                removeSponsoredPost();
 
 
                 /*
-                 * Remove the injected stylesheet.
-                 */
-
-                if (style.parentNode) {
-
-                    style.remove();
-
-                }
-
-
-                /*
-                 * Wait 15 seconds before displaying
-                 * the next Sponsored Post.
+                 * Start 15-second countdown.
                  */
 
                 scheduleNextPopup();
@@ -999,10 +943,6 @@
 
     function scheduleNextPopup() {
 
-        /*
-         * Clear any existing timer.
-         */
-
         if (nextTimer) {
 
             clearTimeout(nextTimer);
@@ -1016,6 +956,13 @@
 
                     nextTimer = null;
 
+                    /*
+                     * Make absolutely sure
+                     * an old popup isn't present.
+                     */
+
+                    removeSponsoredPost();
+
                     createSponsoredPost();
 
                 },
@@ -1026,24 +973,67 @@
 
 
     /* =====================================================
+       PAGE VISIBILITY PROTECTION
+       ===================================================== */
+
+    document.addEventListener(
+        "visibilitychange",
+        function () {
+
+            /*
+             * If the user returns to the Adstrk tab,
+             * never allow an old Sponsored Post
+             * to remain visible.
+             */
+
+            if (
+                document.visibilityState === "visible" &&
+                advertiserOpened
+            ) {
+
+                removeSponsoredPost();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       PAGE SHOW PROTECTION
+       ===================================================== */
+
+    window.addEventListener(
+        "pageshow",
+        function () {
+
+            if (advertiserOpened) {
+
+                removeSponsoredPost();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
        START SYSTEM
        ===================================================== */
 
     function start() {
 
-        /*
-         * First Sponsored Post appears
-         * after 10 seconds.
-         */
+        initialTimer =
+            window.setTimeout(
+                function () {
 
-        window.setTimeout(
-            function () {
+                    initialTimer = null;
 
-                createSponsoredPost();
+                    createSponsoredPost();
 
-            },
-            ADSTRK.initialDelay
-        );
+                },
+                ADSTRK.initialDelay
+            );
 
     }
 
@@ -1065,6 +1055,7 @@
         );
 
     }
+
     else {
 
         start();
