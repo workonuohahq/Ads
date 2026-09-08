@@ -42,13 +42,13 @@
          * Time before the first Sponsored Post.
          * 30 seconds.
          */
-        initialDelay: 30000,
+        initialDelay: 15000,
 
         /*
          * Time between Sponsored Posts.
-         * 60 seconds after Continue is tapped.
+         * 30 seconds after Continue is tapped.
          */
-        repeatDelay: 60000,
+        repeatDelay: 30000,
 
         /*
          * Advertisers.
@@ -60,27 +60,33 @@
         links: [
 
             {
-                url: "https://advertiser1.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd
+",
                 weight: 40
             },
 
             {
-                url: "https://advertiser2.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd
+",
                 weight: 25
             },
 
             {
-                url: "https://advertiser3.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd
+
+",
                 weight: 15
             },
 
             {
-                url: "https://advertiser4.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd
+",
                 weight: 10
             },
 
             {
-                url: "https://advertiser5.com",
+                url: "https://www.profitableratecpmnetwork.com/b1bentxe2?key=e084556a69f7401524a5aa0eb0e7f8cd
+",
                 weight: 10
             }
 
